@@ -26,9 +26,9 @@ class TradeService {
         buyOrder: Order,
         sellOrder: Order,
         tradeType: TradeType,
+        tradeQuantity: Int,
         ordersToUpdateAsCompleted: MutableList<Order>
     ): Trade {
-        val tradeQuantity = minOf(buyOrder.remainingQuantity!!, sellOrder.remainingQuantity!!)
         sellOrder.remainingQuantity = sellOrder.remainingQuantity!! - tradeQuantity
         buyOrder.remainingQuantity = buyOrder.remainingQuantity!! - tradeQuantity
         if (sellOrder.remainingQuantity == 0) {

@@ -9,6 +9,9 @@ import com.ranjith.repository.StockRepository
 import com.ranjith.repository.TradeRepository
 import com.ranjith.service.StockService
 import com.ranjith.service.TradeService
+import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -20,7 +23,7 @@ class SellOrderTypeProcessor(
     private val tradeRepository: TradeRepository,
     private val tradeService: TradeService,
     private val stockService: StockService
-): OrderTypeProcessor {
+) : OrderTypeProcessor {
     companion object {
         private val log = LoggerFactory.getLogger(SellOrderTypeProcessor::class.java)
     }
@@ -28,7 +31,8 @@ class SellOrderTypeProcessor(
     @Transactional
     override fun executeTradeByStockId(stockId: Long, order: Order) {
         log.info("Executing Sell Order for StockId: $stockId")
-        val stock = stockRepository.getByStockId(stockId) ?: throw RuntimeException("Stock not found for StockId: $stockId")
+        val stock =
+            stockRepository.getByStockId(stockId) ?: throw RuntimeException("Stock not found for StockId: $stockId")
 
         val ordersToUpdateAsCompleted = mutableListOf<Order>()
         val executedTrades = mutableListOf<Trade>()
@@ -36,18 +40,38 @@ class SellOrderTypeProcessor(
         val eligibleBuyOrders = orderRepository.getAcceptedOrdersByStockIdAndOrderType(stockId, OrderType.BUY)
             .filter { it.price!! >= order.price!! }
             .sortedWith(compareByDescending<Order> { it.price }.thenBy { it.createdOn }).toMutableList()
-        if(eligibleBuyOrders.isEmpty()) {
+        if (eligibleBuyOrders.isEmpty()) {
             log.info("No eligible Buy orders found for stockId: $stockId")
             return
         }
         var eligibleBuyOrderQuantity = eligibleBuyOrders.sumOf { it.remainingQuantity!! }
 
-        //ToDo: Add concurrency to execute trades in parallel for each buy order
+        val jobs = mutableListOf<Job>()
+        val scope = CoroutineScope(Dispatchers.Default)
+        val mutex = Mutex()
+
         while (order.remainingQuantity!! > 0 && eligibleBuyOrderQuantity > 0 && eligibleBuyOrders.isNotEmpty()) {
             val buyOrder = eligibleBuyOrders.removeFirst()
-            val executedTrade = tradeService.executeTrade(stock, buyOrder, order, TradeType.SELL, ordersToUpdateAsCompleted)
-            eligibleBuyOrderQuantity -= executedTrade.quantity!!
-            executedTrades.add(executedTrade)
+            val tradeQuantity = minOf(order.remainingQuantity!!, buyOrder.remainingQuantity!!)
+
+            val job = scope.launch {
+                val executedTrade = tradeService.executeTrade(
+                    stock,
+                    buyOrder,
+                    order,
+                    TradeType.SELL,
+                    tradeQuantity,
+                    ordersToUpdateAsCompleted
+                )
+                mutex.withLock {
+                    executedTrades.add(executedTrade)
+                }
+            }
+            jobs.add(job)
+            eligibleBuyOrderQuantity -= tradeQuantity
+        }
+        runBlocking {
+            jobs.forEach { it.join() }
         }
 
         orderRepository.saveAll(ordersToUpdateAsCompleted)
