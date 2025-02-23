@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    password: Api1234*
+    url: jdbc:mysql://localhost:3306/trading_system?characterEncoding=UTF-8&autoReconnect=true&useSSL=false
+    username: root
+  jpa:
+    open-in-view: false
