@@ -38,7 +38,7 @@ class BuyOrderTypeProcessor(
             .filter { it.price!! <= order.price!! }
             .sortedWith(compareBy<Order> { it.price }.thenBy { it.createdOn }).toMutableList()
         if (eligibleSellOrders.isEmpty()) {
-            log.info("No eligible buy orders found for stockId: $stockId")
+            log.info("No eligible Sell orders found for stockId: $stockId")
             return
         }
         var eligibleSellOrderQuantity = eligibleSellOrders.sumOf { it.remainingQuantity!! }
