@@ -23,4 +23,9 @@ class StockService {
         stock.stockPrice = newStockPrice
         stockRepository.save(stock)
     }
+
+    @Transactional
+    fun getByStockId(stockId: Long): Stock? {
+        return stockRepository.getByStockId(stockId) ?: throw RuntimeException("Stock not found for StockId: $stockId")
+    }
 }

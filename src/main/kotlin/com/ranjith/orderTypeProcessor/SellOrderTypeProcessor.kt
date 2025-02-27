@@ -19,11 +19,10 @@ import java.time.LocalDateTime
 
 @Component
 class SellOrderTypeProcessor(
-    private val stockRepository: StockRepository,
+    private val stockService: StockService,
     private val orderRepository: OrderRepository,
     private val tradeRepository: TradeRepository,
     private val tradeService: TradeService,
-    private val stockService: StockService
 ) : OrderTypeProcessor {
     companion object {
         private val log = LoggerFactory.getLogger(SellOrderTypeProcessor::class.java)
@@ -32,8 +31,7 @@ class SellOrderTypeProcessor(
     @Transactional
     override fun executeTradeByOrder(order: Order) {
         val stockId = order.stock?.stockId ?: throw RuntimeException("StockId not found for OrderId: ${order.orderId}")
-        val stock =
-            stockRepository.getByStockId(stockId) ?: throw RuntimeException("Stock not found for StockId: $stockId")
+        val stock = stockService.getByStockId(stockId) ?: throw RuntimeException("Stock not found for StockId: ${order.stock?.stockId}")
 
         val ordersToUpdateAsCompleted = mutableListOf<Order>()
         val executedTrades = mutableListOf<Trade>()
