@@ -13,7 +13,7 @@ class EventProducer {
         private var log = LoggerFactory.getLogger(EventProducer::class.java)
     }
 
-    val messageQueue = mutableListOf<Any>()
+    val messageQueue = ArrayDeque<Any>()
 
     fun send(message: Any) {
         messageQueue.add(message)
@@ -25,7 +25,7 @@ class EventProducer {
         return Supplier {
             if (messageQueue.isNotEmpty()) {
                 log.info("Producing event for executing trade for order id: ${messageQueue[0]}")
-                val message = messageQueue.removeAt(0)
+                val message = messageQueue.removeFirst()
                 MessageBuilder.withPayload(message).build()
             } else {
                 null

@@ -75,19 +75,25 @@ class OrderService {
 
     @Transactional
     fun placeOrder(orderDTO: OrderDTO): PlaceOrderResponseDTO {
-        lock.withLock {
-            if(isPlaceOrderRequestValid(orderDTO))
-                orderDTO.orderStatus = OrderStatus.ACCEPTED
-            else
-                orderDTO.orderStatus = OrderStatus.REJECTED
+        if (isPlaceOrderRequestValid(orderDTO)) {
+            orderDTO.orderStatus = OrderStatus.ACCEPTED
             orderDTO.remainingQuantity = orderDTO.originalQuantity
             orderDTO.orderAcceptedAt = LocalDateTime.now()
-            val order = orderMapper.toEntity(orderDTO)
-            val savedOrder = orderRepository.save(order)
-            orderBookService.addToOrderBook(savedOrder)
-            eventProducer.send(ExecuteTradeEventDTO(savedOrder.orderId!!))
-            return PlaceOrderResponseDTO(savedOrder.orderId!!, savedOrder.orderStatus!!)
         }
+        else {
+            orderDTO.orderStatus = OrderStatus.REJECTED //ToDo: Fix the bug
+        }
+        val order = orderMapper.toEntity(orderDTO)
+        var savedOrder: Order
+        lock.withLock {
+            //Because these two are my shared variables
+            savedOrder = orderRepository.save(order)
+            orderBookService.addToOrderBook(savedOrder)
+        }
+        //Event Driven architecture using kafka
+        if(savedOrder.orderStatus == OrderStatus.ACCEPTED)
+            eventProducer.send(ExecuteTradeEventDTO(savedOrder.orderId!!))
+        return PlaceOrderResponseDTO(savedOrder.orderId!!, savedOrder.orderStatus!!)
     }
 
     private fun isPlaceOrderRequestValid(orderDTO: OrderDTO): Boolean {
@@ -100,6 +106,8 @@ class OrderService {
         if(stockRepository.getByStockSymbol(orderDTO.stockDTO!!.stockSymbol!!) == null)
             return false
         if(orderDTO.originalQuantity == null || orderDTO.originalQuantity!! <= 0)
+            return false
+        if(orderDTO.price != null)
             return false
         return true
     }
@@ -135,6 +143,8 @@ class OrderService {
     fun processExecuteTrade(executeTradeEventDTO: ExecuteTradeEventDTO) {
         log.info("Processing execute trade event for order id: ${executeTradeEventDTO.orderId}")
         val order = getOrderEntityByOrderId(executeTradeEventDTO.orderId)
+        if(order.orderStatus != OrderStatus.ACCEPTED)
+            return
         val orderTypeProcessor = orderTypeProcessorFactory.getOrderTypeProcessor(order.orderType ?: throw RuntimeException("Order type not found for order id: ${order.orderId}"))
         orderTypeProcessor.executeTradeByOrder(order)
     }

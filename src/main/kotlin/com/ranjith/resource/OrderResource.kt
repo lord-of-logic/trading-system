@@ -15,6 +15,7 @@ class OrderResource {
         private val log = LoggerFactory.getLogger(OrderResource::class.java)
     }
 
+    //DI, Singleton design pattern taken care by Spring's IoC container
     @Autowired
     private lateinit var orderService: OrderService
 
