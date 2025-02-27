@@ -5,7 +5,6 @@ import com.ranjith.entities.Trade
 import com.ranjith.enums.OrderType
 import com.ranjith.enums.TradeType
 import com.ranjith.repository.OrderRepository
-import com.ranjith.repository.StockRepository
 import com.ranjith.repository.TradeRepository
 import com.ranjith.service.StockService
 import com.ranjith.service.TradeService
