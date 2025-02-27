@@ -11,16 +11,15 @@ import org.springframework.stereotype.Component
 
 @Component
 class OrderTypeProcessorFactory(
-    private val stockRepository: StockRepository,
+    private val stockService: StockService,
     private val orderRepository: OrderRepository,
     private val tradeRepository: TradeRepository,
     private val tradeService: TradeService,
-    private val stockService: StockService
 ){
     fun getOrderTypeProcessor(orderType: OrderType): OrderTypeProcessor {
         return when (orderType) {
-            OrderType.BUY -> BuyOrderTypeProcessor(stockRepository, orderRepository, tradeRepository, tradeService, stockService)
-            OrderType.SELL -> SellOrderTypeProcessor(stockRepository, orderRepository, tradeRepository, tradeService, stockService)
+            OrderType.BUY -> BuyOrderTypeProcessor(stockService, orderRepository, tradeRepository, tradeService)
+            OrderType.SELL -> SellOrderTypeProcessor(stockService, orderRepository, tradeRepository, tradeService)
             else -> throw RuntimeException("Invalid order type")
         }
     }
