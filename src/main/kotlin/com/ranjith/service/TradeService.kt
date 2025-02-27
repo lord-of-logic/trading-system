@@ -28,7 +28,11 @@ class TradeService {
         tradeType: TradeType,
         tradeQuantity: Int,
         ordersToUpdateAsCompleted: MutableList<Order>
-    ): Trade {
+    ): Trade? {
+        if(sellOrder.remainingQuantity!! < tradeQuantity || buyOrder.remainingQuantity!! < tradeQuantity) {
+            log.error("Trade quantity is greater than remaining quantity in either buy or sell order")
+            return null
+        }
         sellOrder.remainingQuantity = sellOrder.remainingQuantity!! - tradeQuantity
         buyOrder.remainingQuantity = buyOrder.remainingQuantity!! - tradeQuantity
         if (sellOrder.remainingQuantity == 0) {

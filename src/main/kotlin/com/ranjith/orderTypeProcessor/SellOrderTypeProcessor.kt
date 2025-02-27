@@ -62,11 +62,13 @@ class SellOrderTypeProcessor(
                     ordersToUpdateAsCompleted
                 )
                 mutex.withLock {
-                    executedTrades.add(executedTrade)
+                    if (executedTrade != null) {
+                        executedTrades.add(executedTrade)
+                        eligibleBuyOrderQuantity -= tradeQuantity
+                    }
                 }
             }
             jobs.add(job)
-            eligibleBuyOrderQuantity -= tradeQuantity
         }
         runBlocking {
             jobs.forEach { it.join() }
