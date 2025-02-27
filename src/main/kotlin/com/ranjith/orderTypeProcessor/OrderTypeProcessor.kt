@@ -8,5 +8,5 @@ interface OrderTypeProcessor {
         private val log = LoggerFactory.getLogger(OrderTypeProcessor::class.java)
     }
 
-    fun executeTradeByStockId(stockId: Long, order: Order)
+    fun executeTradeByOrder(order: Order)
 }

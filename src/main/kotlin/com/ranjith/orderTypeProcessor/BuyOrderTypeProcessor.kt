@@ -15,6 +15,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 
 @Component
 class BuyOrderTypeProcessor(
@@ -29,15 +30,14 @@ class BuyOrderTypeProcessor(
     }
 
     @Transactional
-    override fun executeTradeByStockId(stockId: Long, order: Order) {
-        log.info("Executing Buy Order for StockId: $stockId")
-        val stock =
-            stockRepository.getByStockId(stockId) ?: throw RuntimeException("Stock not found for StockId: $stockId")
+    override fun executeTradeByOrder(order: Order) {
+        val stockId = order.stock?.stockId ?: throw RuntimeException("StockId not found for OrderId: ${order.orderId}")
+        val stock = stockRepository.getByStockId(stockId) ?: throw RuntimeException("Stock not found for StockId: $stockId")
 
         val ordersToUpdateAsCompleted = mutableListOf<Order>()
         val executedTrades = mutableListOf<Trade>()
 
-        val eligibleSellOrders = orderRepository.getAcceptedOrdersByStockIdAndOrderType(stockId, OrderType.SELL)
+        val eligibleSellOrders = orderRepository.getAcceptedOrdersByStockIdAndOrderTypeFromLastThirtyMinutes(stockId, OrderType.SELL, LocalDateTime.now().minusMinutes(30))
             .filter { it.price!! <= order.price!! }
             .sortedWith(compareBy<Order> { it.price }.thenBy { it.createdOn }).toMutableList()
         if (eligibleSellOrders.isEmpty()) {
