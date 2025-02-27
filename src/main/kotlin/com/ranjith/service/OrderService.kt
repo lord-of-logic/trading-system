@@ -81,7 +81,7 @@ class OrderService {
             orderDTO.orderAcceptedAt = LocalDateTime.now()
         }
         else {
-            orderDTO.orderStatus = OrderStatus.REJECTED //ToDo: Fix the bug
+            orderDTO.orderStatus = OrderStatus.REJECTED
         }
         val order = orderMapper.toEntity(orderDTO)
         var savedOrder: Order
@@ -107,7 +107,7 @@ class OrderService {
             return false
         if(orderDTO.originalQuantity == null || orderDTO.originalQuantity!! <= 0)
             return false
-        if(orderDTO.price != null)
+        if(orderDTO.price == null)
             return false
         return true
     }
