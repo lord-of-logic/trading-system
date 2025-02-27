@@ -16,11 +16,10 @@ interface OrderRepository : JpaRepository<Order, Long> {
     @Query("SELECT o FROM Order o WHERE o.orderId = :orderId")
     fun getByOrderId(@Param("orderId") orderId: Long): Order?
 
-    @Query("SELECT o FROM Order o WHERE o.stock.stockId = :stockId AND o.orderType = :orderType AND o.orderStatus = 'ACCEPTED' AND o.orderAcceptedAt >= :earliestAcceptedAtTimestamp")
+    @Query("SELECT o FROM Order o WHERE o.stock.stockId = :stockId AND o.orderType = :orderType AND o.orderStatus = 'ACCEPTED'")
     @Lock(LockModeType.OPTIMISTIC)
     fun getAcceptedOrdersByStockIdAndOrderTypeFromLastThirtyMinutes(
         @Param("stockId") stockId: Long,
-        @Param("orderType") orderType: OrderType,
-        @Param("earliestAcceptedAtTimestamp") earliestAcceptedAtTimestamp: LocalDateTime
+        @Param("orderType") orderType: OrderType
     ): List<Order>
 }

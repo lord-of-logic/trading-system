@@ -14,7 +14,6 @@ import kotlinx.coroutines.sync.withLock
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 
 @Component
 class SellOrderTypeProcessor(
@@ -35,7 +34,7 @@ class SellOrderTypeProcessor(
         val ordersToUpdateAsCompleted = mutableListOf<Order>()
         val executedTrades = mutableListOf<Trade>()
 
-        val eligibleBuyOrders = orderRepository.getAcceptedOrdersByStockIdAndOrderTypeFromLastThirtyMinutes(stockId, OrderType.BUY, LocalDateTime.now().minusMinutes(30))
+        val eligibleBuyOrders = orderRepository.getAcceptedOrdersByStockIdAndOrderTypeFromLastThirtyMinutes(stockId, OrderType.BUY)
             .filter { it.price!! >= order.price!! }
             .sortedWith(compareByDescending<Order> { it.price }.thenBy { it.orderAcceptedAt }).toMutableList()
         if (eligibleBuyOrders.isEmpty()) {

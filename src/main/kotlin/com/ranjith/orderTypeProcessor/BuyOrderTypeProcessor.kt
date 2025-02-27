@@ -5,7 +5,6 @@ import com.ranjith.entities.Trade
 import com.ranjith.enums.OrderType
 import com.ranjith.enums.TradeType
 import com.ranjith.repository.OrderRepository
-import com.ranjith.repository.StockRepository
 import com.ranjith.repository.TradeRepository
 import com.ranjith.service.StockService
 import com.ranjith.service.TradeService
@@ -15,7 +14,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 
 @Component
 class BuyOrderTypeProcessor(
@@ -36,7 +34,7 @@ class BuyOrderTypeProcessor(
         val ordersToUpdateAsCompleted = mutableListOf<Order>()
         val executedTrades = mutableListOf<Trade>()
 
-        val eligibleSellOrders = orderRepository.getAcceptedOrdersByStockIdAndOrderTypeFromLastThirtyMinutes(stockId, OrderType.SELL, LocalDateTime.now().minusMinutes(30))
+        val eligibleSellOrders = orderRepository.getAcceptedOrdersByStockIdAndOrderTypeFromLastThirtyMinutes(stockId, OrderType.SELL)
             .filter { it.price!! <= order.price!! }
             .sortedWith(compareBy<Order> { it.price }.thenBy { it.createdOn }).toMutableList()
         if (eligibleSellOrders.isEmpty()) {
